@@ -1,4 +1,6 @@
+import asyncio
+
 from app import bot
 
 print("Bot is running...")
-bot.polling()
+asyncio.run(bot.polling())

@@ -1,5 +1,8 @@
 telebot
+pyTelegramBotAPI
 requests
 clint
 dotenv
 logging
+asyncio
+aiohttp

@@ -1,26 +1,43 @@
-from telebot import TeleBot
+from telebot.async_telebot import AsyncTeleBot
 
+from app.BotController import BotController
 from app.config import Config
 
 envConfig = Config()
 
-bot = TeleBot(envConfig.TOKEN)
+bot = AsyncTeleBot(envConfig.TOKEN)
+hashed_table = {}
 
-from app.BotController import BotController
 
-botController = BotController(bot)
+botController = BotController(bot, hashed_table)
 
 
 @bot.message_handler(commands=["start"])
-def start(message):
-    botController.start(message)
+async def start(message):
+    await botController.start(message)
 
 
 @bot.message_handler(commands=["help"])
-def help(message):
-    botController.help(message)
+async def help(message):
+    await botController.help(message)
 
 
 @bot.message_handler(func=lambda message: True)
-def downloader(message):
-    botController.downloader(message)
+async def downloader(message):
+    await botController.downloader(message)
+
+
+@bot.callback_query_handler(func=lambda call: True)
+async def callback_query(call):
+    if call.data.startswith("Download"):
+        await bot.answer_callback_query(call.id, "Đang tải xuống...")
+        chat_id, message_id, encoded_data, _ = call.data.split("|")[1:]
+        url = hashed_table[encoded_data]
+        if "MP3" in call.data:
+            await botController.handle_download_audio(chat_id, message_id, url)
+        else:
+            await botController.handle_download_video(chat_id, message_id, url)
+    elif call.data.startswith("Cancel"):
+        chat_id, message_id = call.data.split("|")[1:]
+        await bot.delete_message(chat_id, message_id)
+        await bot.answer_callback_query(call.id, "Đã hủy tải xuống")
