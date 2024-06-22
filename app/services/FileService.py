@@ -10,7 +10,7 @@ class FileService:
         if not os.path.exists(self.files_path):
             os.makedirs(self.files_path)
 
-    async def save(self, url: str, filename: str | None = None):
+    async def save(self, url: str, filename=None):
         if filename is None:
             filename = self.random_filename()
         async with aiohttp.ClientSession() as session:

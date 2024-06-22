@@ -1,6 +1,6 @@
 import hashlib
 
-import requests
+import aiohttp
 from telebot import TeleBot, types
 from telebot.util import quick_markup
 
@@ -59,7 +59,8 @@ class BotController:
                 original_data = button["url"]
                 hashed_data = hashlib.sha256(original_data.encode()).hexdigest()[:10]
                 buttons[f"{button['title']} ✅"] = {
-                    "callback_data": f"Download|{message.chat.id}|{message.message_id}|{hashed_data}|{button['title']}"
+                    "callback_data": f"{button['title'].strip()}|{message.chat.id}|{message.message_id}|"
+                    + f"{hashed_data}|{message.text.split(' ')[0].replace('/', ' ').split()[-1][:10]}"
                 }
                 self.hashed_table[hashed_data] = original_data
 
@@ -91,37 +92,38 @@ class BotController:
                     reply_markup=markup,
                 )
                 self.fileService.delete(image)
+
             except Exception as e:
                 logger.error(e)
-                if len(data["photos"]) > 0:
-                    # for photo in data["photos"]:
+                await self.bot.send_message(
+                    chat_id=message.chat.id,
+                    text="Không thể tải ảnh bìa!",
+                    reply_to_message_id=message.message_id,
+                    reply_markup=markup,
+                )
+            if len(data["photos"]) > 0:
+                from math import ceil
 
-                    #     await self.bot.send_message(
-                    #         chat_id=message.chat.id,
-                    #         text=photo,
-                    #         reply_to_message_id=message.message_id,
-                    #         reply_markup=markup,
-                    #     )
-
+                numberOfSlices = 5
+                for _ in range(ceil(len(data["photos"]) / numberOfSlices)):
                     media = []
+                    async with aiohttp.ClientSession() as session:
+                        for photo in data["photos"][
+                            _ * numberOfSlices : (_ + 1) * numberOfSlices
+                        ]:
+                            try:
+                                async with session.get(photo) as response:
+                                    if response.status == 200:
+                                        photoBin = await response.read()
+                                        media.append(types.InputMediaPhoto(photoBin))
+                            except Exception as e:
+                                logger.error(e)
 
-                    for photo in data["photos"]:
-                        media.append(types.InputMediaPhoto(requests.get(photo).content))
-
-                    await self.bot.send_media_group(
-                        chat_id=message.chat.id,
-                        media=media,
-                        reply_to_message_id=message.message_id,
-                        reply_markup=markup,
-                    )
-
-                else:
-                    await self.bot.send_message(
-                        chat_id=message.chat.id,
-                        text="Không thể tải ảnh đại diện!",
-                        reply_to_message_id=message.message_id,
-                        reply_markup=markup,
-                    )
+                        await self.bot.send_media_group(
+                            chat_id=message.chat.id,
+                            media=media,
+                            reply_to_message_id=message.message_id,
+                        )
 
     async def handle_download_video(self, chat_id: int, message_id: int, url: str):
         video = await self.fileService.save(url)
@@ -136,8 +138,10 @@ class BotController:
 
         self.fileService.delete(video)
 
-    async def handle_download_audio(self, chat_id: int, message_id: int, url: str):
-        audio = await self.fileService.save(url, "audio.mp3")
+    async def handle_download_audio(
+        self, chat_id: int, message_id: int, url: str, origin_url: str
+    ):
+        audio = await self.fileService.save(url, f"{origin_url}.mp3")
 
         await self.bot.send_audio(
             chat_id=chat_id,

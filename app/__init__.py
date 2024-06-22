@@ -22,6 +22,16 @@ async def help(message):
     await botController.help(message)
 
 
+@bot.message_handler(commands=["log"])
+async def log(message):
+    await bot.send_document(
+        message.chat.id,
+        open("app.log", "rb"),
+        reply_to_message_id=message.message_id,
+        caption="Log file",
+    )
+
+
 @bot.message_handler(func=lambda message: True)
 async def downloader(message):
     await botController.downloader(message)
@@ -31,10 +41,12 @@ async def downloader(message):
 async def callback_query(call):
     if call.data.startswith("Download"):
         await bot.answer_callback_query(call.id, "Đang tải xuống...")
-        chat_id, message_id, encoded_data, _ = call.data.split("|")[1:]
+        chat_id, message_id, encoded_data, origin_url = call.data.split("|")[1:]
         url = hashed_table[encoded_data]
         if "MP3" in call.data:
-            await botController.handle_download_audio(chat_id, message_id, url)
+            await botController.handle_download_audio(
+                chat_id, message_id, url, origin_url
+            )
         else:
             await botController.handle_download_video(chat_id, message_id, url)
     elif call.data.startswith("Cancel"):

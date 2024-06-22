@@ -57,6 +57,7 @@ class TiktokDownloader:
 
 if __name__ == "__main__":
     tiktok = TiktokDownloader()
-    url = "https://www.tiktok.com/@lingg2809/video/7375115624269335824"
+    # url = "https://www.tiktok.com/@lingg2809/video/7375115624269335824"
+    url = "https://vt.tiktok.com/ZSY5SWgtq/"
     data = tiktok.extract_video(url)
     print(data)

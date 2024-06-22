@@ -1,8 +1,7 @@
-telebot
 pyTelegramBotAPI
 requests
-clint
-dotenv
+python-dotenv
 logging
 asyncio
 aiohttp
+beautifulsoup4
