@@ -43,7 +43,7 @@ class BotController:
 
     async def show_options(self, message, service):
         msg = await self.bot.reply_to(message, "Searching...")
-        data = service.extract_video(message.text.split(" ")[0])
+        data = service.extract_video(message.text)
         if data["status"] == "error":
             await self.bot.edit_message_text(
                 chat_id=message.chat.id,

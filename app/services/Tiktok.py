@@ -6,7 +6,8 @@ class TiktokDownloader:
     def __init__(self):
         self.api = "https://snaptik.gg/check/"
 
-    def extract_video(self, url: str):
+    def extract_video(self, text: str):
+        url = text.split(" ")[0]
         res = requests.post(self.api, data={"url": url})
         if "html" in res.text:
             data = res.json()["html"]
